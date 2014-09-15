@@ -14,7 +14,6 @@ func genNormal(src Source) float64 {
 		x := src.Uint64()
 		j := int32(x)
 		i := int(x >> 32 & 255)
-		negate := x>>63 != 0
 		if uint32(j+j>>31^j>>31) < normalK[i] {
 			return float64(j) * float64(normalW[i])
 		}
@@ -27,14 +26,15 @@ func genNormal(src Source) float64 {
 			dist := Uniform1_2{}
 			var v float64
 			for {
-				x := -math.Log(dist.Next(src)-1) / normalR
-				y := -math.Log(dist.Next(src) - 1)
+				// Do 2-x to prevent log(0).
+				x := -math.Log(2-dist.Next(src)) / normalR
+				y := -math.Log(2 - dist.Next(src))
 				if y+y >= x*x {
 					v = x + normalR
 					break
 				}
 			}
-			if negate {
+			if x>>63 != 0 {
 				return -v
 			}
 			return v
