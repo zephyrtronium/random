@@ -1,0 +1,1 @@
+This is a mockup of a potential randomness package for gonum. Very little of it has actually been discussed, but this is probably hopefully close to the desired API. Everything has been verified correct by generating 1000000 variates for each distribution and using MATLAB to calculate statistics and display histograms.
