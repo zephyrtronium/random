@@ -130,16 +130,36 @@ func (r RNG) Bign(max *big.Int) *big.Int {
 
 // Float64 produces a uniformly distributed random number in the range [0, 1).
 func (r RNG) Float64() float64 {
-	return Uniform1_2{}.Next(r.Source) - 1
+	// Converting a full uint64 to float64 introduces rounding error. We avoid
+	// this by only taking 53 bits, which is the same as the number of bits in
+	// the float64 mantissa including the implicit normalization bit.
+	return float64(r.Uint64()&(1<<53-1)) / (1 << 53)
 }
 
 // Float32 produces a uniformly distributed random number in the range [0, 1).
 func (r RNG) Float32() float32 {
-	return math.Float32frombits(uint32(r.Uint64()&0x007fffff|0x3f800000)) - 1
+	return float32(r.Uint64()&(1<<24-1)) / (1 << 24)
 }
 
-// Normal produces a normally distributed random number with mean of 0 and
+// NormFloat64 produces a normally distributed random number with mean of 0 and
 // standard deviation of 1.
-func (r RNG) Normal() float64 {
-	return genNormal(r.Source)
+func (r RNG) NormFloat64() float64 {
+	return genNormal(r)
+}
+
+// ExpFloat64 produces an exponentially distributed random number with rate
+// parameter 1.
+func (r RNG) ExpFloat64() float64 {
+	return genExpo(r)
+}
+
+// Perm produces a permutation of the integers in the range [0, n).
+func (r RNG) Perm(n int) []int {
+	a := make([]int, n)
+	for i := range a {
+		j := r.Intn(i + 1)
+		a[i] = a[j]
+		a[j] = i
+	}
+	return a
 }

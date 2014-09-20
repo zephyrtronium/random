@@ -2,16 +2,9 @@ package random
 
 import "math"
 
-// Normal produces random numbers normally distributed with given mean and
-// standard deviation.
-type Normal struct {
-	Mean, StdDev float64
-}
-
-// genNormal produces a normally distributed variate with μ=0 and σ=1.
-func genNormal(src Source) float64 {
+func genNormal(rng RNG) float64 {
 	for {
-		x := src.Uint64()
+		x := rng.Uint64()
 		j := int32(x)
 		i := int(x >> 32 & 255)
 		if uint32(j+j>>31^j>>31) < normalK[i] {
@@ -19,16 +12,15 @@ func genNormal(src Source) float64 {
 		}
 		if i != 0 {
 			v := float64(j) * float64(normalW[i])
-			if normalF[i]+float32(Uniform1_2{}.Next(src)-1)*(normalF[i-1]-normalF[i]) < float32(math.Exp(-0.5*v*v)) {
+			if (normalF[i] + rng.Float32()*(normalF[i-1]-normalF[i])) < float32(math.Exp(-0.5*v*v)) {
 				return v
 			}
 		} else {
-			dist := Uniform1_2{}
 			var v float64
 			for {
-				// Do 2-x to prevent log(0).
-				x := -math.Log(2-dist.Next(src)) / normalR
-				y := -math.Log(2 - dist.Next(src))
+				// Do 1-x to prevent log(0).
+				x := -math.Log(1-rng.Float64()) / normalR
+				y := -math.Log(1 - rng.Float64())
 				if y+y >= x*x {
 					v = x + normalR
 					break
@@ -40,10 +32,6 @@ func genNormal(src Source) float64 {
 			return v
 		}
 	}
-}
-
-func (n Normal) Next(src Source) float64 {
-	return n.Mean + genNormal(src)*n.StdDev
 }
 
 const normalR = 3.65415288536101
